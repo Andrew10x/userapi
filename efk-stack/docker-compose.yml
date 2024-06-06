@@ -1,0 +1,36 @@
+version: '3'
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.2
+    environment:
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms750m -Xmx750m"
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+
+  fluentd:
+    build: ./fluentd
+    links:
+      - elasticsearch
+    depends_on:
+      - elasticsearch
+    volumes:
+      - ./fluentd/conf:/fluentd/etc
+      - ./logs:/logs
+    ports:
+      - "24224:24224"
+      - "24224:24224/udp"
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.13.0
+    links:
+      - elasticsearch
+    depends_on:
+      - elasticsearch
+    environment:
+      ELASTICSEARCH_HOSTS: '["http://elasticsearch:9200"]'
+    ports:
+      - "5601:5601"
